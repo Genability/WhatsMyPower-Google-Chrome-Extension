@@ -1,0 +1,19 @@
+{
+  "name": "What's My Power?",
+  "version": "1.0",
+  "description": "Description",
+  "browser_action": {
+    "default_icon": "images/icon.png",
+	"popup":"popup.html"
+  },
+  "icons": {
+    "16": "images/icon-bitty.png",
+    "48": "images/icon-small.png",
+    "128": "images/icon-large.png"
+  },
+  "permissions": [
+    "http://api.genability.com/rest/public",
+	"http://test.genability.com/rest/public",
+	"http://ci.genability.com/rest/public"
+  ]
+}

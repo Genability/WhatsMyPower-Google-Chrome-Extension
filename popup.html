@@ -1,0 +1,51 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+	<title>What's My Power?</title>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js"></script> 
+	<script type="text/javascript" src="json2.js"></script> 
+	<script type="text/javascript" src="main.js"></script>
+	<link rel="stylesheet" href="styles.css" type="text/css" media="screen" charset="utf-8" />
+</head>
+<body>
+<div id="wrapper">
+	<div id="header">
+		<img id="logo" src="images/logo.png" />
+		<img id="whatsmypower" src="images/whatsmypower.png" />
+		<a class="options btn" href="#"><span>OPTIONS</span></a>
+	</div>
+	<div id="inner_wrapper">
+		<div id="updating">
+			<p>Updating Rate Information</p>
+			<div id="animation">
+				<img src="images/updating_filled.png" />
+				<img src="images/updating_empty.png" />
+				<img src="images/updating_empty.png" />
+				<img src="images/updating_empty.png" />
+				<img src="images/updating_empty.png" />
+			</div>
+		</div>
+		<div id="error">
+			<p>Error Processing Data</p>
+			<p class="error_code">Error Code #</p>
+			<p class="error_info"></p>
+			<p>Issues? <a href="http://feedback.whatsmypower.com/websites/121/ideas?category_id=411" target="_blank">Click Here for Support.</a></p>
+		</div>
+		<div id="options" class="page"></div>
+		<div id="widget" class="page">
+			<p class="territory"></p>
+			<p class="season"></p>
+			<p class="provider"></p>
+			<p class="tariff"></p>
+			<p class="rate"></p>
+			<p class="next_rate"></p>
+			<ul class="details"></ul>
+		</div>	
+	</div>
+	<div id="footer">
+		<p>Powered by <a href="http://www.whatsmypower.com" title="whatsmypower.com" target="_blank">whatsmypower.com</a>. <a href="http://feedback.whatsmypower.com/" target="_blank">Send feedback</a>.</p>
+	</div>
+</div>
+</body>
+</html>

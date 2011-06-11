@@ -1,0 +1,302 @@
+/* global */
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	min-width: 300px;
+	overflow-x:hidden;
+}
+
+form {
+	font-size: 11px;
+	line-height: 18px;
+}
+
+input {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	margin-bottom: 10px;
+}
+
+input.text_input {
+	padding: 3px 5px;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 13px;
+	color: #494949;
+	border: 1px solid #868686;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1) inset;
+	border-radius: 2px;
+}
+
+input.text_input:focus { box-shadow: 0 0 8px rgba(0, 150, 214, 0.1) inset; }
+
+	input[type="radio"]:checked > .planHolder{ font-weight: bold; }
+
+/* text */
+h1 {
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 14px;
+	color: blue;
+	font-weight: normal;
+}
+
+	#header h1 { display: inline; }
+	
+a { color: #0096D6; }
+	
+a.choose_zip {
+	margin-top: -3px;
+	font-weight: bold;
+	background: #808080;
+	border: 1px solid #808080;
+	padding: 2px 2px 0 2px;
+	text-decoration: none;
+	color: #ffffff;
+}
+
+	a.choose_zip:hover {
+		background-color: #ffffff;
+		color: #808080;
+	}
+	
+p { font-family: Georgia, "Times New Roman", serif; }
+
+.planHolder {
+	display: block;
+	position: relative;
+}
+
+.plan {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+.selected_plan input[type="radio"] {
+	top: 4px; 
+	left: 4px;
+}
+
+.selected_plan .radio_txt, .selected_plan .lseName { padding-left: 6px; }
+	
+label.radio_txt, span.lseName {
+	display: inline-block;
+	margin: 0 0 0 20px;
+	font-size: 11px;
+	line-height: 16px;
+	color: #0096D6;
+	width: 90%;
+}
+
+span.lseName {
+	color: #000000;
+	margin: 0 0 15px 20px;
+}
+
+p.territory { margin-top: 0; }
+
+p.rate_plan { margin: 3px 0 2px 0; }
+
+.btn, #buttons input, .save {
+	width: 71px;
+	height: 21px;
+	color: #404041;
+	font-family: arial;
+	font-size: 11px;
+	font-weight: bold;
+	text-decoration: none;
+	position: relative;
+	margin-top: -5px;
+	margin-right: 5px;
+	float: right;
+	background-image: url("images/btn_bg.png");
+	border: none;
+}
+
+	.btn:hover, #buttons input:hover, .save:hover {
+		color: #CFD1D2;
+		background-image: url("images/btn_bg_over.png");
+	}
+	
+	#buttons input { margin-top: 0; }
+	
+	.save {
+		margin: 0 0 0 5px;
+		float: none;
+	}
+
+	#cancel {
+		margin-top: 0;
+		float: left;
+	}
+	
+	.btn span {
+		position: absolute;
+		top: 5px;
+		left: 10px;
+	}
+	
+	#cancel span {
+		top: 2px;
+		left: 13px;
+	}
+	
+	.zcode, p.rate_plan, .kilowatts, .error_code {
+		margin-bottom: 3px;
+		font-family: Georgia, "Times New Roman", serif;
+		font-size: 13px;
+		font-weight: bold;
+		color: #494949;
+		display: block;
+	}
+	
+	.info, #error, .season, .provider, .tariff, .rate, .next_rate {
+		font-family: Georgia, "Times New Roman", serif;
+		font-size: 12px;
+		color: #868686;
+		margin: 0;
+	}
+	
+	.selected_plan, .details li {
+		width: auto;
+		padding: 4px 8px 4px 0;
+		background-color: #E9E7E7;
+		border-radius: 4px;
+		color: #0096D6;
+	}
+	
+		.details {
+			margin-bottom: 0;
+			padding: 10px 0 0 20px;
+		}
+	
+		.details li {
+			font-family: Georgia, "Times New Roman", serif;
+			font-size: 11px;
+			padding: 4px 8px 4px 8px;
+			background-color: transparent;
+		}
+
+.updated {
+	color: #868686;
+	font-family: Georgia, "Times New Roman", serif;
+	font-size: 11px;
+	text-align: right;
+}
+		
+	.rate, .next_rate {
+		position: relative;
+		margin-left: 20px;
+		margin-top: 15px;
+		padding: 10px 10px 10px 35px;
+		font-weight: normal;
+		color: #494949;
+		background-color: #E9E7E7;
+		border-radius: 5px;
+	}
+	
+	.next_rate {
+		padding-left: 40px;
+		background-color: none;
+		background: url('images/rate_change.png') 0 2px no-repeat;
+		overflow: hidden;
+	}
+	
+		.next_rate.increase { background-position: 0px -88px; }
+	
+	.rate_holder {
+		position: absolute;
+		top: 2px;
+		left: 0;
+		margin-left: -22px;
+		width: 45px;
+		height: 45px;
+		background-color: #FFA500;
+		border-radius: 25px;
+		font-family: Georgia, "Times New Roman", serif;
+		font-size: 20px;
+		font-weight: bold;
+		color: #ffffff;
+		text-align: center;
+	}
+	
+		.cents {
+			display: block;
+			margin: 10px 0 0 0;
+		}
+
+#wrapper {
+	width: 300px;
+	min-height: 400px;
+}
+
+	.page { padding: 7px 0 7px 0; }
+
+	#header {
+		height: 35px;
+		padding: 7px 0 7px 0;
+	}
+	
+		#logo, #whatsmypower {
+			position: absolute;
+			top: 0;
+			left: 5px;
+		}
+		
+			#whatsmypower {
+				top: 12px;
+				left: 70px;
+			}
+	
+	#inner_wrapper { position: relative; }
+
+		#updating {
+			display: none;
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 300px;
+			height: auto;
+		}
+		
+		#animation {
+			position: absolute;
+			top: 110px;
+			left: 90px;
+		}		
+		
+			#updating p {
+				position: absolute;
+				top: 70px;
+				left: 55px;
+				font-family: Georgia, "Times New Roman", serif;
+				font-size: 13px;
+				font-weight: bold;
+				color: #0096D6;
+			}
+	
+			#plans {
+				height: 200px;
+				overflow: auto;
+			}
+	
+			#buttons {
+				position: fixed;
+				bottom: 40px;
+				right: 5px;
+			}
+		
+		ul li { list-style-image: url("images/bullet.png"); }
+		
+		#error { display: none; }
+			
+	#footer {
+		width: 100%;
+		position: fixed;
+		bottom: 0;
+		font-family: Arial;
+		font-size: 11px;
+		color: #B2B2B2;
+		padding-top: 7px;
+		border-top: 1px dotted #B2B2B2;
+	}
+	
+body .none { display: none; }
