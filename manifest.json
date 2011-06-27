@@ -2,6 +2,7 @@
   "name": "What's My Power?",
   "version": "1.0",
   "description": "Description",
+  "background_page": "background.html",
   "browser_action": {
     "default_icon": "images/icon.png",
 	"popup":"popup.html"

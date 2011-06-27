@@ -1,11 +1,44 @@
+// Copyright 2011 Genability 
+
+// Licensed under the Apache License, Version 2.0 (the "License"); 
+// you may not use this file except in compliance with the License. 
+// You may obtain a copy of the License at 
+
+// http://www.apache.org/licenses/LICENSE-2.0 
+
+// Unless required by applicable law or agreed to in writing, software 
+// distributed under the License is distributed on an "AS IS" BASIS, 
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+// See the License for the specific language governing permissions and 
+// limitations under the License.
+
 // api global variables
+// var COUNT = 0; // for debugging only
+var AUTHORIZE = new Keys();
+var API_ID = AUTHORIZE.api_id;
+var API_KEY = AUTHORIZE.api_key;
 var API_ROOT_URL = "http://api.genability.com/rest/public/";
+var API_TEST_URL = "http://test.genability.com/rest/public/";
 var TARIFFS_API = "tariffs";
 var TERRITORY_API = "territories";
 var LSES_API = "lses";
 var PRICES_API = "prices";
 var SEASONS_API = "seasons";
-var API_AUTH_STRING = "?appId=[YOUR_API_ID]&appKey=[YOUR_API_KEY]"; // https://developer.genability.com/signup
+var API_AUTH_STRING = "?appId="+API_ID+"&appKey="+API_KEY; // https://developer.genability.com/signup
+
+// badge colors
+var LOADING = [103,103,103,255];
+var FIXED = [57,181,74,255];
+var LOW = [57,181,74,255];
+var MID = [217,224,73,255];
+var HIGH = [247,147,30,255];
+var HIGHEST = [193,39,45,255];
+var LOADING_HEX = "#666666";
+var FIXED_HEX = "#39B54A";
+var LOW_HEX = "#39B54A";
+var MID_HEX = "#D9E021";
+var HIGH_HEX = "#F7931E";
+var HIGHEST_HEX = "#C1272D";
 
 // average consumer power consumption
 var JAN = 1746;
@@ -23,7 +56,7 @@ var DEC = 1503;
 var monthArray = [JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC];
 var monthStrings= ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 var currDate = new Date();
-var currMonth = currDate.getMonth() + 1;
+var currMonth = currDate.getMonth();
 console.log(currDate);
 
 // timer vars for loading animation
@@ -33,7 +66,8 @@ var TIMER_IS_ON = 0;
 // animation durations
 var FADE_IN_DURATION = 400;
 
-$(document).ready(function(){	
+$(document).ready(function(){
+	// localStorage.clear();
 	// load widget if zipcode is available or options if it is not
 	if(localStorage.zipCode != undefined){
 		if(localStorage.chosenPlan != undefined){
@@ -47,6 +81,7 @@ $(document).ready(function(){
 	
 	// click handler for the options button
 	$(".options").click(function(){
+		$(this).hide();
 		loadTariffs();
 	});
 });
@@ -54,7 +89,6 @@ $(document).ready(function(){
 // load the plans for the zipcode
 function loadTariffs(json){
 	$('#options').show();
-	$(".options").hide();
 	$("#error").hide();
 	$("#widget").hide();
 	// build zip_code form
@@ -72,7 +106,7 @@ function loadTariffs(json){
 	var plans_div = $("<div/>").attr("id", "plans").appendTo(plan_form);
 	
 	// if json object is valid build the input fields for the plans
-	if(json){
+	if(json && json.results.length > 0){
 		console.log("Logging tariffs");
 		var plans = $.each(json.results, function(i,result){
 			var planHolder = $("<span/>").attr("class", "planHolder");
@@ -86,8 +120,11 @@ function loadTariffs(json){
 			console.log(result);
 	    });
 		var div = $("<div/>").attr("id", "buttons").appendTo(plans_div);
-		$("<a/>").attr("class", "btn").attr("id", "cancel").html("<span>CANCEL</span>").appendTo(div);
+		//$("<a/>").attr("class", "btn").attr("id", "cancel").html("<span>CANCEL</span>").appendTo(div);
 		$("<input/>").attr("type", "submit").attr("value", "SUBMIT").appendTo(div);
+	} else if (json) {
+		console.log("Tariff has no rate data.");
+		$('#plans').html('<p class="incomplete">We do not yet have complete rates for '+localStorage.zipCode+'.<br /> <a href="http://whatsmypower.com/locations/'+localStorage.zipCode+'" title="whatsmypower.com" target="_blank">More info.</a></p>');
 	}
 	
 	// hide all other plans when a plan is chosen, show estimate field
@@ -117,8 +154,10 @@ function loadTariffs(json){
 			console.log("url: "+url);
 			var jqxhr = $.getJSON(url, function(json) {
 			})
-			.success(function(territoryJSON) { 
-				localStorage.territoryId = territoryJSON.results[0].territoryId;
+			.success(function(territoryJSON) {
+				if(territoryJSON.results.length > 0){
+					localStorage.territoryId = territoryJSON.results[0].territoryId;
+				}
 			})
 			.error(function(json) { 
 				loadErrorScreen(json); 
@@ -142,6 +181,8 @@ function loadTariffs(json){
 
 	// attach a submit handler to the zip_code form	
 	$("#choose_zip").submit(function(event) {
+		localStorage.clear();
+		chrome.browserAction.setBadgeText({text:''});
 		plan_form.remove();
 		$("#choose_zip input[type=submit]").attr('disabled','disabled');
 		// stop form from submitting normally
@@ -150,7 +191,7 @@ function loadTariffs(json){
 		var $form = $(this),
 			term = $form.find('input[name="zip_code"]').val(),
 			url = $form.attr('action');
-		url = url+API_AUTH_STRING+"&zipCode="+term;
+		url = url+API_AUTH_STRING+"&zipCode="+term+"&customerClasses=RESIDENTIAL&tariffTypes=DEFAULT,ALTERNATIVE";
 
 		localStorage.zipCode = term;
 		// start loading animation
@@ -162,16 +203,19 @@ function loadTariffs(json){
 		.success(function(json) { 
 			plan_form.remove();
 			zip_form.remove();
+			// clearing pricesJSON so the app makes a new pull for the new tariff.
+			localStorage.removeItem("pricesJSON");
 			localStorage.tariffs = json;
 			console.log("json object being passed to loadTariffs();");
-			console.log(json);			
+			console.log(json);						
 			loadTariffs(json);
 		})
 		.error(function(json) {
 			loadErrorScreen(json); 
 			console.log("ERROR:choose_zip:");
 			console.log(json);
-		}).complete(function(json) {
+			localStorage.clear();	
+		}).complete(function(json) {			
 			loadUpdatingModal("stop");
 			$("#choose_zip input[type=submit]").removeAttr('disabled');
 		});
@@ -200,9 +244,9 @@ function loadTariffs(json){
 	});
 	
 	// setup cancel button functionality
-	$('#cancel').click(function() {
-		self.close();
-	});
+	//$('#cancel').click(function() {
+	//	self.close();
+	//});
 }
 
 function loadWidget() {
@@ -247,94 +291,181 @@ function loadCityState(masterTarrifId) {
 	.complete(function(json) {});
 }
 
-function loadWidgetData(tariffJSON) {
-	// ajax call for price
-	var currentTime = currDate.getFullYear() + "-" + currDate.getMonth() + "-" + currDate.getDate() + " " + currDate.toLocaleTimeString();
-	var pricesUrl = API_ROOT_URL+PRICES_API+"/"+tariffJSON.masterTariffId+API_AUTH_STRING+"&fromDateTime="+currentTime+"&territoryId="+localStorage.territoryId+"&consumptionAmount="+localStorage.monthlyConsumption;
-	var jqxhr = $.getJSON(pricesUrl, function(json) {
-	})
-	.success(function(pricesJSON) {
-		loadUpdatingModal("stop");
-		if($("#widget")){$("#widget").fadeIn(FADE_IN_DURATION).show()};
-		$("inner_wrapper").text(pricesUrl);
-		$("#widget p").html("");
-		$("#widget .details").html("");
-		console.log(tariffJSON);
-		$(".territory").html('ZIP Code '+localStorage.zipCode);
-		// Check for charge types and write them to the details list
-		var tariffChargeTypes = [];
-		for(i=0;i<pricesJSON.results.length;i++){
-			switch(pricesJSON.results[i].chargeType){
-				case "FIXED_PRICE":
-					tariffChargeTypes[0] = ("Fixed");
-					break;
-				case "MINIMUM":
-					tariffChargeTypes[1] = ("Minimum");
-					break;
-				case "DEMAND_BASED":
-					tariffChargeTypes[2] = ("Demand");
-					break;
-			}
-		}
-		var detailsUl = $(".details");
-		if(tariffChargeTypes.length > 0){
-			$("<li/>").html("This plan has " +tariffChargeTypes.toString()+ " charges.").appendTo(detailsUl);
-		}
-		$("<li/>").html('<a href="http://whatsmypower.com/locations/'+localStorage.zipCode+'/rates/'+tariffJSON.tariffId+'" title="whatsmypower.com" target="_blank">Your electricity plan details.</a>').appendTo(detailsUl);
-		$(".tariff").html(tariffJSON.tariffName + " from " + tariffJSON.lseName);
-		$(".provider").html();
-		console.log("pricesUrl");
-		console.log(pricesUrl);
-		console.log("pricesJSON");
-		console.log(pricesJSON);
-		var currentPrice = Math.round(pricesJSON.results[0].rateAmount); 
-		// setting chrome badge w/ price
-		chrome.browserAction.setBadgeText({text:currentPrice+' '+String.fromCharCode(162)});
-		chrome.browserAction.setBadgeBackgroundColor({color:[255,165,0,255]});
-		$(".rate").html("<div class='rate_holder'><span class='cents'>"+currentPrice+"&cent;</span></div>We estimate you are paying a rate of "+pricesJSON.results[0].rateAmount+"&cent;/kWh.");
-		// check for a price change and display it
-		if(pricesJSON.results[0].priceChanges[0]){
-			// convert iso-8601 date to the hour of the time
-			var nextTime = new Date(pricesJSON.results[0].priceChanges[0].changeDateTime).getHours();
-			// convert to standard time
-			var standardTime = showTheHours(nextTime);
-			// flag any price increase
-			var rateDelta;
-			$(".next_rate").removeClass('increase').removeClass('none');
-			if(currentPrice < pricesJSON.results[0].priceChanges[0].rateAmount) {
-				$(".next_rate").addClass('increase');
-				rateDelta = "increase";
-			} else {
-				rateDelta = "decrease";
-			}
-			$(".next_rate").html("At "+standardTime+showAmPm(nextTime)+" the electricity will "+rateDelta+ " to a rate of "+pricesJSON.results[0].priceChanges[0].rateAmount+"&cent;/kWh.");
-		} else {
-			$(".next_rate").addClass('none');
-		}
-	})
-	.error(function(json) {
-		loadErrorScreen(json);
-		//$("#inner_wrapper").text(pricesUrl);
-		console.log("ERROR:loadWidgetData:priceUrl:");
-		console.log(json);
-		console.log("pricesUrl");
-		console.log(pricesUrl);
-	})
-	.complete(function(json) {});
+function gmtOffset(offset) { // get military offsetHours ex: -0700
+	var stringOffset = String((offset/60)*100);
+	if(stringOffset.length < 5) {
+		var tempOffset = stringOffset.slice(1,offset.length);
+		tempOffset = "0"+tempOffset;
+		var newOffset = stringOffset.slice(0,1) + tempOffset;
+		return newOffset;
+	} else {
+		return offset;
+	}
+}
 
-	// ajax call for seasons for season
-	var seasonUrl = API_ROOT_URL+SEASONS_API+API_AUTH_STRING+"&lseId="+tariffJSON.lseId;
-	var jqxhr = $.getJSON(seasonUrl, function(json) {
-	})
-	.success(function(seasonJSON) { 
-		console.log(seasonJSON.results[0].seasons);
-		$(".season").html(seasonJSON.results[0].seasons[0].seasonName);
-	})
-	.error(function(json) { 
-		loadErrorScreen(json); 
-		console.log("ERROR:loadWidgetData:seasonUrl:");
-		console.log(json);
-	}).complete(function(json) {});
+function loadWidgetData(tariffJSON) {
+	currDate = new Date();
+	var gmtHours = gmtOffset(-currDate.getTimezoneOffset());
+	//var currentTime = currDate.getUTCFullYear() + "-" + (currDate.getUTCMonth()+1) + "-" + currDate.getUTCDate() + "T" + currDate.getUTCHours() + ":" + currDate.getUTCMinutes() + ":" + currDate.getUTCSeconds() + ".0" + gmtHours;
+	var currentTime = currDate.getFullYear() + "-" + pad(currDate.getMonth()+1,2) + "-" + pad(currDate.getDate(),2) + "T" + pad(currDate.getHours(),2) + ":" + pad(currDate.getMinutes(),2) + ":" + pad(currDate.getSeconds(),2) + ".0" + gmtHours;
+	console.log("currentTime");
+	console.log(currentTime);
+	// detect if the tariff has territories and use either the territoryId or tariffId to lookup the rate
+	var RATE_KEY;
+	if(localStorage.territoryId){
+		RATE_KEY = "&territoryId="+localStorage.territoryId;
+	} else {
+		RATE_KEY = "&tariffId="+localStorage.tariffId;
+	}
+	var pricesUrl = API_ROOT_URL+PRICES_API+"/"+tariffJSON.masterTariffId+API_AUTH_STRING+"&fromDateTime="+currentTime+RATE_KEY+"&consumptionAmount="+localStorage.monthlyConsumption;
+	if (localStorage.pricesJSON != undefined) {
+		var retrievedObject = localStorage.pricesJSON;
+		var decodedPricesJSON = JSON.parse(String(retrievedObject));
+		console.log("decodedPricesJSON");
+		console.log(decodedPricesJSON);
+		displayData(decodedPricesJSON, tariffJSON, pricesUrl);
+	} else {
+		console.log("301: else");
+		// ajax call for price
+		var jqxhr = $.getJSON(pricesUrl, function(json) {
+		})
+		.success(function(pricesJSON) {
+			// Uncomment this block to create a situation where the widget will change badge and price 30 seconds from reload
+			// if (COUNT < 1) {
+			//	var d1 = new Date (),
+			//	    d2 = new Date ( d1 );
+			//	d2.setSeconds ( d1.getSeconds() + 30 );
+			//	pricesJSON.results[0].priceChanges[0].changeDateTime = d2;
+			//	pricesJSON.results[0].priceChanges[0].rateAmount = 50;
+			//	pricesJSON.results[0].rateAmount = 50; 
+			//	COUNT++;
+			//}
+			var result_string = JSON.stringify(pricesJSON);
+			localStorage.pricesJSON = result_string;
+			displayData(pricesJSON, tariffJSON, pricesUrl);
+		})
+		.error(function(json) {
+			loadErrorScreen(json);
+			//$("#inner_wrapper").text(pricesUrl);
+			console.log("ERROR:loadWidgetData:priceUrl:");
+			console.log(json);
+			console.log("pricesUrl");
+			console.log(pricesUrl);
+			localStorage.clear();	
+		})
+		.complete(function(json) {});
+
+		// ajax call for seasons for season
+		var seasonUrl = API_ROOT_URL+SEASONS_API+API_AUTH_STRING+"&lseId="+tariffJSON.lseId;
+		var jqxhr = $.getJSON(seasonUrl, function(json) {
+		})
+		.success(function(seasonJSON) { 
+			console.log(seasonJSON.results[0].seasons);
+			$(".season").html(seasonJSON.results[0].seasons[0].seasonName);
+		})
+		.error(function(json) { 
+			loadErrorScreen(json); 
+			console.log("ERROR:loadWidgetData:seasonUrl:");
+			console.log(json);
+		}).complete(function(json) {});
+	}
+}
+
+function displayData(pricesJSON, tariffJSON, pricesUrl) {
+	loadUpdatingModal("stop");
+	if($("#widget")){$("#widget").fadeIn(FADE_IN_DURATION).show()};
+	$("inner_wrapper").text(pricesUrl);
+	$("#widget p").html("");
+	$("#widget .details").html("");
+	console.log(tariffJSON);
+	$(".territory").html('ZIP Code '+localStorage.zipCode);
+	// Check for charge types and write them to the tariffChargeTypes array
+	var chargeTypes;
+	var tariffChargeTypes = [];
+	for(i=0;i<pricesJSON.results.length;i++){
+		switch(pricesJSON.results[i].chargeType){
+			case "FIXED_PRICE":
+				tariffChargeTypes[0] = ("Fixed");
+				break;
+			case "MINIMUM":
+				tariffChargeTypes[1] = ("Minimum");
+				break;
+			case "DEMAND_BASED":
+				tariffChargeTypes[2] = ("Demand");
+				break;
+		}
+	}
+	// Remove undefined charge types from the array
+	for(i=0;i<tariffChargeTypes.length;i++){
+		if(tariffChargeTypes[i] == undefined){
+			tariffChargeTypes.splice(i,1);
+			i--;
+		}
+	}
+	// Write the tariffChargeTypes array to a human readable list
+	switch(tariffChargeTypes.length){
+		case 1:
+			chargeTypes = tariffChargeTypes[0];
+			break;
+		case 2:
+			chargeTypes = tariffChargeTypes.join(' and ');
+			break;
+		case 3:
+			tariffChargeTypes[2] = 'and '+tariffChargeTypes[2];
+			chargeTypes = tariffChargeTypes.join(', ');
+			break;
+	}
+	var detailsUl = $(".details");
+	if(chargeTypes){$("<li/>").html("This plan has " +chargeTypes+ " charges.").appendTo(detailsUl);}
+	$("<li/>").html('<a href="http://whatsmypower.com/locations/'+localStorage.zipCode+'/rates/'+tariffJSON.tariffId+'" title="whatsmypower.com" target="_blank">Your electricity plan details.</a>').appendTo(detailsUl);
+	$(".tariff").html(tariffJSON.tariffName + " from " + tariffJSON.lseName);
+	$(".provider").html();
+	console.log("pricesUrl");
+	console.log(pricesUrl);
+	console.log("pricesJSON");
+	console.log(pricesJSON);
+	// detect current price of the consumption rate
+	var currentPrice;
+	var priceIndex;
+	var currentTariff;
+	for(i=0;i<pricesJSON.results.length;i++){
+		if(pricesJSON.results[i].chargeType == "CONSUMPTION_BASED"){
+			currentTariff = pricesJSON.results[i];
+			currentPrice = pricesJSON.results[i].rateAmount;
+			priceIndex = pricesJSON.results[i].relativePriceIndex;
+			i = pricesJSON.results.length;
+		}
+	}
+	// setting chrome badge w/ price
+	chrome.browserAction.setBadgeText({text:Math.round(currentPrice)+' '+String.fromCharCode(162)});
+	if (tariffChargeTypes.toString() == "Fixed"){
+		chrome.browserAction.setBadgeBackgroundColor({color:FIXED});
+		$(".rate").html("<div class='rate_holder' style='background-color:"+FIXED_HEX+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a rate of "+currentPrice+"&cent;/kWh.");
+	} else {
+		chrome.browserAction.setBadgeBackgroundColor({color:getBadgeColor(priceIndex, false)});
+		$(".rate").html("<div class='rate_holder' style='background-color:"+getBadgeColor(priceIndex, true)+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a rate of "+currentPrice+"&cent;/kWh.");
+	}
+	// check for a price change and display it
+	if(currentTariff.priceChanges[0]){
+		// convert iso-8601 date to the hour of the time
+		var nextTime = new Date(currentTariff.priceChanges[0].changeDateTime).getHours();
+		// convert to standard time
+		var standardTime = showTheHours(nextTime);
+		var nextMonth = new Date(currentTariff.priceChanges[0].changeDateTime).getMonth()+1;
+		var nextDate = new Date(currentTariff.priceChanges[0].changeDateTime).getDate();
+		// flag any price increase
+		var rateDelta;
+		$(".next_rate").removeClass('increase').removeClass('none');
+		if(currentPrice < currentTariff.priceChanges[0].rateAmount) {
+			$(".next_rate").addClass('increase');
+			rateDelta = "increase";
+		} else {
+			rateDelta = "decrease";
+		}
+		$(".next_rate").html("At "+standardTime+showAmPm(nextTime)+"on "+nextMonth+"/"+nextDate +" the rate will "+rateDelta+ " to "+currentTariff.priceChanges[0].rateAmount+"&cent;/kWh.");
+	} else {
+		$(".next_rate").addClass('none');
+	}
 }
 
 function showTheHours(theHour) {
@@ -367,7 +498,11 @@ function loadUpdatingModal(execute){
         }, 500);
 		$("#updating").fadeIn(FADE_IN_DURATION).show();
 	}else{ 
-		$(".options").fadeIn(FADE_IN_DURATION).show();
+		if ($("#choose_zip").css("display") == "block") {
+			$(".options").hide();
+		} else {
+			$(".options").fadeIn(FADE_IN_DURATION).show();
+		}
 		console.log("timer stopping");
 		clearTimeout(TIMER);
 		$("#updating").hide();
@@ -379,4 +514,35 @@ function loadErrorScreen(json){
 	$(".error_code").html("Error Code# "+json.statusCode);
 	$(".error_info").html(json.statusText);
 	$("#error").fadeIn(FADE_IN_DURATION).show();
+}
+
+function getBadgeColor(relativePriceIndex, isHex) {
+	if (isHex) {
+		if (relativePriceIndex < 0.26) {
+			return LOW_HEX;
+		} else if (relativePriceIndex < 0.51) {
+			return MID_HEX;
+		} else if (relativePriceIndex < 0.76) {
+			return HIGH_HEX;
+		} else {
+			return HIGHEST_HEX;
+		}
+	} else {
+		if (relativePriceIndex < 0.26) {
+			return LOW;
+		} else if (relativePriceIndex < 0.51) {
+			return MID;
+		} else if (relativePriceIndex < 0.76) {
+			return HIGH;
+		} else {
+			return HIGHEST;
+		}
+	}
+}
+function pad(number, length) { 
+    var str = '' + number;
+    while (str.length < length) {
+        str = '0' + str;
+    }  
+    return str;
 }
