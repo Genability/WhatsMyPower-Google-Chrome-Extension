@@ -435,18 +435,20 @@ function displayData(pricesJSON, tariffJSON, pricesUrl) {
 	var currentPrice;
 	var priceIndex;
 	var currentTariff;
+	var noConsumption = true;
 	for(i=0;i<pricesJSON.results.length;i++){
 		if(pricesJSON.results[i].chargeType == "CONSUMPTION_BASED"){
 			currentTariff = pricesJSON.results[i];
 			currentPrice = pricesJSON.results[i].rateAmount;
 			priceIndex = pricesJSON.results[i].relativePriceIndex;
 			i = pricesJSON.results.length;
-		} else {
-			currentTariff = pricesJSON.results[i];
-			currentPrice = 0;
-			priceIndex = pricesJSON.results[i].relativePriceIndex;
-			i = pricesJSON.results.length;
+			noConsumption = false;
 		}
+	}
+	if (noConsumption) {
+		currentTariff = pricesJSON.results[0];
+		currentPrice = 0;
+		priceIndex = pricesJSON.results[0].relativePriceIndex;
 	}
 	// setting chrome badge w/ price
 	chrome.browserAction.setBadgeText({text:Math.round(currentPrice)+' '+String.fromCharCode(162)});
