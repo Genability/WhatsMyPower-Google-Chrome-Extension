@@ -18,7 +18,6 @@ var AUTHORIZE = new Keys();
 var API_ID = AUTHORIZE.api_id;
 var API_KEY = AUTHORIZE.api_key;
 var API_ROOT_URL = "http://api.genability.com/rest/public/";
-var API_TEST_URL = "http://test.genability.com/rest/public/";
 var TARIFFS_API = "tariffs";
 var TERRITORY_API = "territories";
 var LSES_API = "lses";
@@ -184,6 +183,7 @@ function loadTariffs(json){
 		localStorage.clear();
 		chrome.browserAction.setBadgeText({text:''});
 		plan_form.remove();
+		$("#choose_zip .incomplete").remove();
 		$("#choose_zip input[type=submit]").attr('disabled','disabled');
 		// stop form from submitting normally
 		event.preventDefault(); 
@@ -193,32 +193,37 @@ function loadTariffs(json){
 			url = $form.attr('action');
 		url = url+API_AUTH_STRING+"&zipCode="+term+"&customerClasses=RESIDENTIAL&tariffTypes=DEFAULT,ALTERNATIVE";
 
-		localStorage.zipCode = term;
-		// start loading animation
-		loadUpdatingModal("start");
-		// Assign handlers immediately after making the request, and remember the jqxhr object for this request
-		var jqxhr = $.getJSON(url, function(json) {
-			//console.log(json);
-		})
-		.success(function(json) { 
-			plan_form.remove();
-			zip_form.remove();
-			// clearing pricesJSON so the app makes a new pull for the new tariff.
-			localStorage.removeItem("pricesJSON");
-			localStorage.tariffs = json;
-			console.log("json object being passed to loadTariffs();");
-			console.log(json);						
-			loadTariffs(json);
-		})
-		.error(function(json) {
-			loadErrorScreen(json); 
-			console.log("ERROR:choose_zip:");
-			console.log(json);
-			localStorage.clear();	
-		}).complete(function(json) {			
-			loadUpdatingModal("stop");
+		if (/(^\d{5}$)/.test(term)) {
+			localStorage.zipCode = term;
+			// start loading animation
+			loadUpdatingModal("start");
+			// Assign handlers immediately after making the request, and remember the jqxhr object for this request
+			var jqxhr = $.getJSON(url, function(json) {
+				//console.log(json);
+			})
+			.success(function(json) { 
+				plan_form.remove();
+				zip_form.remove();
+				// clearing pricesJSON so the app makes a new pull for the new tariff.
+				localStorage.removeItem("pricesJSON");
+				localStorage.tariffs = json;
+				console.log("json object being passed to loadTariffs();");
+				console.log(json);						
+				loadTariffs(json);
+			})
+			.error(function(json) {
+				loadErrorScreen(json); 
+				console.log("ERROR:choose_zip:");
+				console.log(json);
+				localStorage.clear();	
+			}).complete(function(json) {			
+				loadUpdatingModal("stop");
+				$("#choose_zip input[type=submit]").removeAttr('disabled');
+			});
+		} else {
 			$("#choose_zip input[type=submit]").removeAttr('disabled');
-		});
+			$('#choose_zip').append('<p class="incomplete">Please enter a valid 5 digit zip code.</p>');
+		}
 	});
 	
 	// attach a submit handler to the plans form	
@@ -228,7 +233,8 @@ function loadTariffs(json){
 		// get some values from elements on the page:
 		var $form = $(this),
 			chosen_plan = $form.find('input:checked').val();
-			localStorage.chosenPlan = chosen_plan;
+			if (chosen_plan != undefined) {
+				localStorage.chosenPlan = chosen_plan;
 			localStorage.monthlyConsumption = $(".consumption").val();
 		//$("<p/>").html(chosen_plan + " " + localStorage.monthlyConsumption).appendTo("#wrapper");
 		$("#widget").fadeIn(FADE_IN_DURATION).show();
@@ -241,6 +247,7 @@ function loadTariffs(json){
 			console.log("Monthly Consumption: DEFAULT: "+monthArray[currMonth]);
 		}
 		loadWidget();
+			}
 	});
 	
 	// setup cancel button functionality
@@ -434,13 +441,18 @@ function displayData(pricesJSON, tariffJSON, pricesUrl) {
 			currentPrice = pricesJSON.results[i].rateAmount;
 			priceIndex = pricesJSON.results[i].relativePriceIndex;
 			i = pricesJSON.results.length;
+		} else {
+			currentTariff = pricesJSON.results[i];
+			currentPrice = 0;
+			priceIndex = pricesJSON.results[i].relativePriceIndex;
+			i = pricesJSON.results.length;
 		}
 	}
 	// setting chrome badge w/ price
 	chrome.browserAction.setBadgeText({text:Math.round(currentPrice)+' '+String.fromCharCode(162)});
 	if (tariffChargeTypes.toString() == "Fixed"){
 		chrome.browserAction.setBadgeBackgroundColor({color:FIXED});
-		$(".rate").html("<div class='rate_holder' style='background-color:"+FIXED_HEX+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a rate of "+currentPrice+"&cent;/kWh.");
+		$(".rate").html("<div class='rate_holder' style='background-color:"+FIXED_HEX+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a consumption rate of "+currentPrice+"&cent;/kWh.");
 	} else {
 		chrome.browserAction.setBadgeBackgroundColor({color:getBadgeColor(priceIndex, false)});
 		$(".rate").html("<div class='rate_holder' style='background-color:"+getBadgeColor(priceIndex, true)+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a rate of "+currentPrice+"&cent;/kWh.");
@@ -462,7 +474,7 @@ function displayData(pricesJSON, tariffJSON, pricesUrl) {
 		} else {
 			rateDelta = "decrease";
 		}
-		$(".next_rate").html("At "+standardTime+showAmPm(nextTime)+"on "+nextMonth+"/"+nextDate +" the rate will "+rateDelta+ " to "+currentTariff.priceChanges[0].rateAmount+"&cent;/kWh.");
+		$(".next_rate").html("At "+standardTime+showAmPm(nextTime)+" on "+nextMonth+"/"+nextDate +" the rate will "+rateDelta+ " to "+currentTariff.priceChanges[0].rateAmount+"&cent;/kWh.");
 	} else {
 		$(".next_rate").addClass('none');
 	}
