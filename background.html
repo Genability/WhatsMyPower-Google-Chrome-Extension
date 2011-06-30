@@ -13,7 +13,7 @@
 	var retrievedPricesObject = localStorage.pricesJSON;
 	var PRICES_JSON;
 	if(retrievedPricesObject){
-		PRICES_JSON = JSON.parse(String(retrievedPricesObject))
+		PRICES_JSON = JSON.parse(String(retrievedPricesObject));
 	}else{
 		PRICES_JSON = retrievedPricesObject;
 	};
@@ -38,11 +38,17 @@
 	});
 
 	function updateWidget() {
-		var nextTime = new Date(PRICES_JSON.results[0].priceChanges[0].changeDateTime);
+		var changeTime;
+		for(i=0;i<PRICES_JSON.results.length;i++){
+			if(PRICES_JSON.results[i].chargeType == "CONSUMPTION_BASED"){
+				changeTime = PRICES_JSON.results[i].priceChanges[0].changeDateTime;
+				i = PRICES_JSON.results.length;
+			}
+		}
 		var currentTime = new Date();
 		console.log(currentTime);
-		console.log(nextTime);
-		if (dates.compare(nextTime,currentTime) == -1){
+		console.log(changeTime);
+		if (dates.compare(changeTime,currentTime) == -1){
 			console.log("updateWidget: priceChange in past, deleting localStorage.pricesJSON");
 			localStorage.removeItem("pricesJSON");
 			loadWidget();

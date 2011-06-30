@@ -348,7 +348,9 @@ function loadWidgetData(tariffJSON) {
 			//	COUNT++;
 			//}
 			var result_string = JSON.stringify(pricesJSON);
+			// store value locally and reset global prices variable
 			localStorage.pricesJSON = result_string;
+			PRICES_JSON = JSON.parse(String(localStorage.pricesJSON));
 			displayData(pricesJSON, tariffJSON, pricesUrl);
 		})
 		.error(function(json) {
@@ -553,6 +555,7 @@ function getBadgeColor(relativePriceIndex, isHex) {
 		}
 	}
 }
+
 function pad(number, length) { 
     var str = '' + number;
     while (str.length < length) {
