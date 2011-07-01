@@ -441,7 +441,7 @@ function displayData(pricesJSON, tariffJSON, pricesUrl) {
 	for(i=0;i<pricesJSON.results.length;i++){
 		if(pricesJSON.results[i].chargeType == "CONSUMPTION_BASED"){
 			currentTariff = pricesJSON.results[i];
-			currentPrice = pricesJSON.results[i].rateAmount;
+			currentPrice = pricesJSON.results[i].rateAmount*100;
 			priceIndex = pricesJSON.results[i].relativePriceIndex;
 			i = pricesJSON.results.length;
 			noConsumption = false;
@@ -456,10 +456,10 @@ function displayData(pricesJSON, tariffJSON, pricesUrl) {
 	chrome.browserAction.setBadgeText({text:Math.round(currentPrice)+' '+String.fromCharCode(162)});
 	if (tariffChargeTypes.toString() == "Fixed"){
 		chrome.browserAction.setBadgeBackgroundColor({color:FIXED});
-		$(".rate").html("<div class='rate_holder' style='background-color:"+FIXED_HEX+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a consumption rate of "+currentPrice+"&cent;/kWh.");
+		$(".rate").html("<div class='rate_holder' style='background-color:"+FIXED_HEX+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a consumption rate of "+currentPrice.toFixed(2)+"&cent;/kWh.");
 	} else {
 		chrome.browserAction.setBadgeBackgroundColor({color:getBadgeColor(priceIndex, false)});
-		$(".rate").html("<div class='rate_holder' style='background-color:"+getBadgeColor(priceIndex, true)+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a rate of "+currentPrice+"&cent;/kWh.");
+		$(".rate").html("<div class='rate_holder' style='background-color:"+getBadgeColor(priceIndex, true)+"'><span class='cents'>"+Math.round(currentPrice)+"&cent;</span></div>We estimate you are paying a rate of "+currentPrice.toFixed(2)+"&cent;/kWh.");
 	}
 	// check for a price change and display it
 	if(currentTariff.priceChanges[0]){
@@ -472,13 +472,14 @@ function displayData(pricesJSON, tariffJSON, pricesUrl) {
 		// flag any price increase
 		var rateDelta;
 		$(".next_rate").removeClass('increase').removeClass('none');
-		if(currentPrice < currentTariff.priceChanges[0].rateAmount) {
+		var nextPrice = currentTariff.priceChanges[0].rateAmount*100
+		if(currentPrice < nextPrice) {
 			$(".next_rate").addClass('increase');
 			rateDelta = "increase";
 		} else {
 			rateDelta = "decrease";
 		}
-		$(".next_rate").html("At "+standardTime+showAmPm(nextTime)+" on "+nextMonth+"/"+nextDate +" the rate will "+rateDelta+ " to "+currentTariff.priceChanges[0].rateAmount+"&cent;/kWh.");
+		$(".next_rate").html("At "+standardTime+showAmPm(nextTime)+" on "+nextMonth+"/"+nextDate +" the rate will "+rateDelta+ " to "+nextPrice.toFixed(2)+"&cent;/kWh.");
 	} else {
 		$(".next_rate").addClass('none');
 	}
