@@ -1,4 +1,4 @@
 function Keys() {
-	this.api_id = "1b608b14";
-	this.api_key = "9bc872e8b09bdec94adc3299eca9700c";
+	this.api_id = "3b5ba2f0";
+	this.api_key = "9ddcfa56f00b45dcf83f62150c3e8b70";
 }

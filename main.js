@@ -300,21 +300,21 @@ function loadCityState(masterTarrifId) {
 
 function gmtOffset(offset) { // get military offsetHours ex: -0700
 	var stringOffset = String((offset/60)*100);
-	if(stringOffset.length < 5) {
-		var tempOffset = stringOffset.slice(1,offset.length);
-		tempOffset = "0"+tempOffset;
-		var newOffset = stringOffset.slice(0,1) + tempOffset;
-		return newOffset;
-	} else {
-		return offset;
+	if (stringOffset.substr(0,1) != "-") {
+		stringOffset = "+" + stringOffset;
 	}
+	while (stringOffset.length != 5) {
+		stringOffset = stringOffset.substr(0,1) + "0" + stringOffset.substr(1,stringOffset.length);
+	}
+	return stringOffset;
+	
 }
 
 function loadWidgetData(tariffJSON) {
 	currDate = new Date();
 	var gmtHours = gmtOffset(-currDate.getTimezoneOffset());
 	//var currentTime = currDate.getUTCFullYear() + "-" + (currDate.getUTCMonth()+1) + "-" + currDate.getUTCDate() + "T" + currDate.getUTCHours() + ":" + currDate.getUTCMinutes() + ":" + currDate.getUTCSeconds() + ".0" + gmtHours;
-	var currentTime = currDate.getFullYear() + "-" + pad(currDate.getMonth()+1,2) + "-" + pad(currDate.getDate(),2) + "T" + pad(currDate.getHours(),2) + ":" + pad(currDate.getMinutes(),2) + ":" + pad(currDate.getSeconds(),2) + ".0" + gmtHours;
+	var currentTime = currDate.getFullYear() + "-" + pad(currDate.getMonth()+1,2) + "-" + pad(currDate.getDate(),2) + "T" + pad(currDate.getHours(),2) + ":" + pad(currDate.getMinutes(),2) + ":" + pad(currDate.getSeconds(),2) + ".0" + encodeURIComponent(gmtHours);
 	console.log("currentTime");
 	console.log(currentTime);
 	// detect if the tariff has territories and use either the territoryId or tariffId to lookup the rate
@@ -355,7 +355,6 @@ function loadWidgetData(tariffJSON) {
 		})
 		.error(function(json) {
 			loadErrorScreen(json);
-			//$("#inner_wrapper").text(pricesUrl);
 			console.log("ERROR:loadWidgetData:priceUrl:");
 			console.log(json);
 			console.log("pricesUrl");
@@ -528,8 +527,9 @@ function loadUpdatingModal(execute){
 
 function loadErrorScreen(json){
 	if($("#updating")){loadUpdatingModal("stop")};
-	$(".error_code").html("Error Code# "+json.statusCode);
-	$(".error_info").html(json.statusText);
+	//$(".error_code").html("Error Code# "+json.statusCode);
+	//$(".error_info").html(json.statusText);
+	$(".error_code").html("There was an error processing your request. Please try again. If the problem persists, please contact us!");
 	$("#error").fadeIn(FADE_IN_DURATION).show();
 }
 
