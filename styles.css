@@ -284,6 +284,10 @@ p.rate_plan { margin: 3px 0 2px 0; }
 				height: 200px;
 				overflow: auto;
 			}
+
+#plans_o {
+	margin: 15px 0;
+}
 	
 			#buttons {
 				position: fixed;

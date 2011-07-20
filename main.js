@@ -81,6 +81,9 @@ $(document).ready(function(){
 	// click handler for the options button
 	$(".options").click(function(){
 		$(this).hide();
+		if (localStorage.zipCode != undefined) {
+			localStorage.zipCodeSearch = localStorage.zipCode;
+		}
 		loadTariffs();
 	});
 });
@@ -92,17 +95,44 @@ function loadTariffs(json){
 	$("#widget").hide();
 	// build zip_code form
 	var zip_form = $("<form/>").attr("id", "choose_zip").attr("action", API_ROOT_URL+TARIFFS_API).appendTo("#options.page");
-	var zip_label = $("<label/>").attr("for", "zip_code").attr("class", "zcode").html("ZIP Code").appendTo(zip_form);
+	var zip_label = $("<label/>").attr("for", "zip_code").attr("class", "zcode").html("Zip Code").appendTo(zip_form);
 	var zip_input = $("<input/>").attr("id", "zip_code").attr("name", "zip_code").attr("class", "text_input").appendTo(zip_form);
 	$("<input/>").attr("type", "submit").attr("class", "save").attr("value", "SAVE").appendTo(zip_form);
 	// load zipCode if stored in local Storage
-	$("#zip_code").val(localStorage.zipCode);
+	if (localStorage.zipCodeSearch != undefined) {
+		$("#zip_code").val(localStorage.zipCodeSearch);
+	} else {
+		$("#zip_code").val(localStorage.zipCode);
+	}
 	$("<br/>").appendTo(zip_form);
 	
 	// build plans form
 	var plan_form = $("<form/>").attr("id", "rate_plans").appendTo("#options.page");
 	var rate_plan = $("<p/>").attr("class", "rate_plan").html("Rate Plan ").appendTo(plan_form).hide();
-	var plans_div = $("<div/>").attr("id", "plans").appendTo(plan_form);
+	var plans_div = $("<div/>").attr("id", "plans").appendTo(plan_form).hide();
+
+	// if a plan is already selected, show edit option
+	if (localStorage.tariffName != undefined && localStorage.lseName != undefined) {
+		var plans_div_o = $("<div/>").attr("id", "plans_o").appendTo("#options.page");
+		var rate_plan_o = $("<p/>").attr("class", "rate_plan").html("Current Rate Plan ").appendTo(plans_div_o);
+		$("<a/>").attr("class", "edit_plans_o").html("edit").appendTo(rate_plan_o);
+		var planHolder = $("<span/>").attr("class", "planHolder");
+		$("<label/>").addClass("radio_txt").html(localStorage.tariffName).appendTo(planHolder);
+		$("<br/>").appendTo(planHolder);
+		$("<span/>").addClass("lseName").html(localStorage.lseName).appendTo(planHolder);
+		planHolder.appendTo(plans_div_o);
+	}
+
+	// if localStorage.monthlyConsumption set, display option
+	if (localStorage.monthlyConsumption != undefined && !isNaN(localStorage.monthlyConsumption)) {
+		var con_form = $("<form/>").attr("id", "choose_con").attr("action", API_ROOT_URL+TARIFFS_API).appendTo("#options.page");
+		var con_label = $("<label/>").attr("for", "consumption_o").attr("class", "zcode").html("Monthly Consumption").appendTo(con_form);
+		var con_input = $("<input/>").attr("id", "consumption_o").attr("name", "consumption_o").attr("class", "text_input").appendTo(con_form);
+		$("<input/>").attr("type", "submit").attr("class", "save").attr("value", "SAVE").appendTo(con_form);
+		// load monthlyConsumption if stored in local Storage
+		$("#consumption_o").val(localStorage.monthlyConsumption);
+		$("<br/>").appendTo(con_form);
+	}
 	
 	// if json object is valid build the input fields for the plans
 	if(json && json.results.length > 0){
@@ -115,15 +145,21 @@ function loadTariffs(json){
 			$("<br/>").appendTo(planHolder);
 			$("<span/>").addClass("lseName").html(result.lseName).appendTo(planHolder);
 			planHolder.appendTo(plans_div);
+			plans_div.show();
 			rate_plan.show();
+			$("#plans_o").remove();
+			$("#choose_con").remove();
 			console.log(result);
 	    });
 		var div = $("<div/>").attr("id", "buttons").appendTo(plans_div);
 		//$("<a/>").attr("class", "btn").attr("id", "cancel").html("<span>CANCEL</span>").appendTo(div);
-		$("<input/>").attr("type", "submit").attr("value", "SUBMIT").appendTo(div);
+		var plan_submit = $("<input/>").attr("type", "submit").attr("value", "SUBMIT").appendTo(div).hide();
 	} else if (json) {
 		console.log("Tariff has no rate data.");
-		$('#plans').html('<p class="incomplete">We do not yet have complete rates for '+localStorage.zipCode+'.<br /> <a href="http://whatsmypower.com/locations/'+localStorage.zipCode+'" title="whatsmypower.com" target="_blank">More info.</a></p>');
+		$('#plans').html('<p class="incomplete">We do not yet have complete rates for '+localStorage.zipCodeSearch+'.<br /> <a href="http://whatsmypower.com/locations/'+localStorage.zipCodeSearch+'" title="whatsmypower.com" target="_blank">More info.</a></p>');
+		plans_div.show();
+		$("#plans_o").remove();
+		$("#choose_con").remove();
 	}
 	
 	// hide all other plans when a plan is chosen, show estimate field
@@ -146,10 +182,11 @@ function loadTariffs(json){
 			planHolders.not(thisPlanHolder).toggle();
 			// create edit button for plans form
 			$("<a/>").attr("class", "edit_plans").html("edit").appendTo(rate_plan);
+			plan_submit.show();
 
 			var retrievedObject = localStorage.tariff;
 			var encoded = JSON.parse(String(retrievedObject));
-			var url = API_ROOT_URL+TERRITORY_API+API_AUTH_STRING+"&masterTariffId="+encoded.masterTariffId+"&containsItemType=ZIPCODE&containsItemValue="+localStorage.zipCode;
+			var url = API_ROOT_URL+TERRITORY_API+API_AUTH_STRING+"&masterTariffId="+encoded.masterTariffId+"&containsItemType=ZIPCODE&containsItemValue="+localStorage.zipCodeSearch;
 			console.log("url: "+url);
 			var jqxhr = $.getJSON(url, function(json) {
 			})
@@ -178,11 +215,20 @@ function loadTariffs(json){
 		});
     }).change();
 
+	// pressing edit is actually the same as saving a zipcode
+	$(".edit_plans_o").click(function(event) {
+		$("#choose_zip").submit();
+	});
+
 	// attach a submit handler to the zip_code form	
 	$("#choose_zip").submit(function(event) {
-		localStorage.clear();
-		chrome.browserAction.setBadgeText({text:''});
+		//localStorage.clear();
+		//chrome.browserAction.setBadgeText({text:''});
 		plan_form.remove();
+		$("#plans_o").remove();
+		$("#choose_con").remove();
+		//con_form.remove();
+		//plans_div_o.hide();
 		$("#choose_zip .incomplete").remove();
 		$("#choose_zip input[type=submit]").attr('disabled','disabled');
 		// stop form from submitting normally
@@ -194,7 +240,7 @@ function loadTariffs(json){
 		url = url+API_AUTH_STRING+"&zipCode="+term+"&customerClasses=RESIDENTIAL&tariffTypes=DEFAULT,ALTERNATIVE";
 
 		if (/(^\d{5}$)/.test(term)) {
-			localStorage.zipCode = term;
+			localStorage.zipCodeSearch = term;
 			// start loading animation
 			loadUpdatingModal("start");
 			// Assign handlers immediately after making the request, and remember the jqxhr object for this request
@@ -225,11 +271,18 @@ function loadTariffs(json){
 			$('#choose_zip').append('<p class="incomplete">Please enter a valid 5 digit zip code.</p>');
 		}
 	});
+
+	//attach a submit handler to the choose_con form
+	$("#choose_con").submit(function(event) {
+		localStorage.monthlyConsumption = $("#consumption_o").val();
+		loadWidget();
+	});
 	
 	// attach a submit handler to the plans form	
 	$("#rate_plans").submit(function(event) {
 		// stop form from submitting normally
-		event.preventDefault(); 
+		event.preventDefault();
+		localStorage.zipCode = localStorage.zipCodeSearch;
 		// get some values from elements on the page:
 		var $form = $(this),
 			chosen_plan = $form.find('input:checked').val();
@@ -354,7 +407,7 @@ function loadWidgetData(tariffJSON) {
 			displayData(pricesJSON, tariffJSON, pricesUrl);
 		})
 		.error(function(json) {
-			loadErrorScreen(json);
+			loadErrorScreen(pricesUrl);
 			console.log("ERROR:loadWidgetData:priceUrl:");
 			console.log(json);
 			console.log("pricesUrl");
@@ -386,7 +439,7 @@ function displayData(pricesJSON, tariffJSON, pricesUrl) {
 	$("#widget p").html("");
 	$("#widget .details").html("");
 	console.log(tariffJSON);
-	$(".territory").html('ZIP Code '+localStorage.zipCode);
+	$(".territory").html('Zip Code '+localStorage.zipCode);
 	// Check for charge types and write them to the tariffChargeTypes array
 	var chargeTypes;
 	var tariffChargeTypes = [];
@@ -426,6 +479,8 @@ function displayData(pricesJSON, tariffJSON, pricesUrl) {
 	var detailsUl = $(".details");
 	if(chargeTypes){$("<li/>").html("This plan has " +chargeTypes+ " charges.").appendTo(detailsUl);}
 	$("<li/>").html('<a href="http://whatsmypower.com/locations/'+localStorage.zipCode+'/rates/'+tariffJSON.tariffId+'" title="whatsmypower.com" target="_blank">Your electricity plan details.</a>').appendTo(detailsUl);
+	localStorage.tariffName = tariffJSON.tariffName;
+	localStorage.lseName = tariffJSON.lseName;
 	$(".tariff").html(tariffJSON.tariffName + " from " + tariffJSON.lseName);
 	$(".provider").html();
 	console.log("pricesUrl");
@@ -530,6 +585,8 @@ function loadErrorScreen(json){
 	//$(".error_code").html("Error Code# "+json.statusCode);
 	//$(".error_info").html(json.statusText);
 	$(".error_code").html("There was an error processing your request. Please try again. If the problem persists, please contact us!");
+$(".error_code").html(json);
+
 	$("#error").fadeIn(FADE_IN_DURATION).show();
 }
 
