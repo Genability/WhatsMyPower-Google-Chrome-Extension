@@ -90,6 +90,9 @@ $(document).ready(function(){
 
 // load the plans for the zipcode
 function loadTariffs(json){
+	if (localStorage.zipCodeSearch == undefined && localStorage.zipCode != undefined) {
+		localStorage.zipCodeSearch = localStorage.zipCode;
+	}
 	$('#options').show();
 	$("#error").hide();
 	$("#widget").hide();
@@ -101,7 +104,7 @@ function loadTariffs(json){
 	// load zipCode if stored in local Storage
 	if (localStorage.zipCodeSearch != undefined) {
 		$("#zip_code").val(localStorage.zipCodeSearch);
-	} else {
+	} else if (localStorage.zipCode != undefined) {
 		$("#zip_code").val(localStorage.zipCode);
 	}
 	$("<br/>").appendTo(zip_form);
@@ -175,7 +178,11 @@ function loadTariffs(json){
 			$(thisPlanHolder).addClass("selected_plan");
 			var estimateHolder = $("<span/>").attr("class", "estimateHolder");
 			$("<p/>").attr("class", "kilowatts").html("Monthly Consumption in kWh").appendTo(estimateHolder);
-			$("<input/>").attr("name", "estimate").attr("class", "consumption text_input").appendTo(estimateHolder).attr("placeholder", monthArray[currMonth]);
+			if (localStorage.monthlyConsumption != undefined && !isNaN(localStorage.monthlyConsumption)) {
+				$("<input/>").attr("name", "estimate").attr("class", "consumption text_input").appendTo(estimateHolder).val(localStorage.monthlyConsumption);
+			} else {
+				$("<input/>").attr("name", "estimate").attr("class", "consumption text_input").appendTo(estimateHolder).attr("placeholder", monthArray[currMonth]);
+			}
 			$("<br/>").appendTo(estimateHolder);
 			estimateHolder.appendTo(thisPlanHolder.parent());
 			$("<p/>").attr("class", "info").html("This figure can be found on your electric bill or on your energy provider's website. <strong>If you leave this blank we will use the national average.</strong>").appendTo(estimateHolder);

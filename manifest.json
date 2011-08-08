@@ -1,6 +1,6 @@
 {
   "name": "What's My Power?",
-  "version": "1.5",
+  "version": "1.65",
   "description": "Real-time electricity price in your home from whatsmypower.com. See important updates and you'll be alerted when the rate changes.",
   "background_page": "background.html",
   "browser_action": {
